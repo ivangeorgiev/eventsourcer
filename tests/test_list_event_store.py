@@ -4,8 +4,10 @@ from freezegun import freeze_time
 from eventsourcer.list_event_store import ListEventStore, NotFoundError
 from eventsourcer.event import Event, EventSequence
 
+
 class FakeEvent(Event):
     pass
+
 
 @freeze_time("2022-11-01 12:00:01")
 def test_save_should_append_to_store_list():
@@ -19,7 +21,7 @@ def test_save_should_append_to_store_list():
             "event_type": FakeEvent.__module__ + ".FakeEvent",
             "version": 0,
             "created_at": dt.datetime.fromisoformat("2022-11-01T12:00:01"),
-            "data": {}
+            "data": {},
         }
     ]
 
@@ -33,12 +35,14 @@ def test_load_should_retrieve_events():
             "event_type": FakeEvent.__module__ + ".FakeEvent",
             "version": 0,
             "created_at": dt.datetime.fromisoformat("2022-11-21T12:00:01"),
-            "data": {}
-        })
+            "data": {},
+        }
+    )
 
     actual = store.load(1)
 
     assert actual == EventSequence(1, 0).append(FakeEvent())
+
 
 def test_load_should_raise_notfounderror_entity_not_in_store():
     store = ListEventStore()

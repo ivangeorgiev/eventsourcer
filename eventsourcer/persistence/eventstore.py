@@ -21,13 +21,6 @@ class EventEncoder(Generic[StoredEventT], ABC):
         """Encode event into store representation"""
 
 
-class NoneEncoder(EventEncoder[Event]):
-    """No change encoder"""
-
-    def encode(self, event: Event) -> Event:
-        return event
-
-
 class EventDecoder(ABC, Generic[StoredEventT]):
     """Generic event decoder"""
 
@@ -36,27 +29,20 @@ class EventDecoder(ABC, Generic[StoredEventT]):
         """Decode event from store representation"""
 
 
-class NoneDecoder(EventDecoder[Event]):
-    """No change decoder"""
-
-    def decode(self, obj: Event) -> Event:
-        return obj
-
-
-class EventWriter(Generic[StoredEventT]):
-    """Generic event writer"""
+class Writer(Generic[StoredEventT]):
+    """Generic event store writer"""
 
     @abstractmethod
-    def append_all(self, sequence: Iterable[StoredEventT]):
-        """Append a sequence of events to the store"""
+    def write(self, events: Iterable[StoredEventT]):
+        """Writes a sequence of stored events to the store"""
 
 
-class EventQuery(Generic[StoredEventT]):
-    """Generic event query"""
+class Reader(Generic[StoredEventT]):
+    """Generic event store reader"""
 
     @abstractmethod
-    def execute(self, originator_id) -> Iterable[StoredEventT]:
-        """Get event sequence from the store"""
+    def read(self, originator_id) -> Iterable[StoredEventT]:
+        """Reads a sequence of stored events from the store"""
 
 
 class EventStore(Generic[StoredEventT]):
@@ -64,15 +50,15 @@ class EventStore(Generic[StoredEventT]):
 
     encoder: EventEncoder[StoredEventT]
     decoder: EventDecoder[StoredEventT]
-    writer: EventWriter[StoredEventT]
-    query: EventQuery[StoredEventT]
+    writer: Writer[StoredEventT]
+    reader: Reader[StoredEventT]
 
     def get(self, originator_id) -> Iterable[Event]:
         """Get events orriginated at originator_id"""
         return (
-            self.decoder.decode(stored) for stored in self.query.execute(originator_id)
+            self.decoder.decode(stored) for stored in self.reader.read(originator_id)
         )
 
     def put(self, events: Iterable[Event]):
         """Append events to event store"""
-        self.writer.append_all((self.encoder.encode(event) for event in events))
+        self.writer.write((self.encoder.encode(event) for event in events))

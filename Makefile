@@ -47,12 +47,20 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
 
+format:
+	isort eventsourcer --profile black
+	black eventsourcer tests
 lint/flake8: ## check style with flake8
 	flake8 eventsourcer tests
+lint/isort: ## check interface sort
+	isort --check eventsourcer --profile black
 lint/black: ## check style with black
 	black --check eventsourcer tests
-
-lint: lint/flake8 lint/black ## check style
+lint/mypy: ## check types
+	mypy eventsourcer/persistence
+lint/pylint: ## pylint checks
+	pylint eventsourcer/persistence
+lint: lint/isort lint/black lint/mypy lint/pylint ## check style
 
 test: ## run tests quickly with the default Python
 	pytest

@@ -1,0 +1,49 @@
+@startuml persistence
+
+namespace persistence {
+
+    namespace eventstore {
+
+        interface EventEncoder  {
+            {abstract} encode(self, event: Event) -> StoredEventT
+        }
+
+        interface EventDecoder {
+            {abstract} decode(obj: StoredEventT) -> Event
+        }
+
+        interface EventReader {
+            {abstract} read(originator_id) -> Iterable[Event]
+        }
+
+        interface EventWriter {
+            {abstract} write(event: Event)
+            {abstract} write(events: Iterable[Event])
+        }
+
+        class EventStore {
+
+            get(originator_id): Iterable[Event]
+            put(events: Iterable[Event])
+
+        }
+        EventStore o-- "encoder" EventEncoder
+        EventStore o-- "decoder" EventDecoder
+        EventStore o-- "writer" EventWriter
+        EventStore o-- "reader" EventReader
+    }
+
+    namespace listeventstore {
+        persistence.eventstore.EventStore <|- ListEventStore
+        ListEventStore o-- "encoder" ListEventEncoder
+        ListEventStore o-- "decoder" ListEventDecoder
+        ListEventStore o-- "writer" ListEventWriter
+        ListEventStore o-- "reader" ListEventReader
+
+        class ListEventStore {
+            {static} create() -> ListEventStore
+        }
+    }
+}
+@enduml
+
