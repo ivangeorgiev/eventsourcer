@@ -4,12 +4,15 @@ import typing as t
 
 TEntityId = t.TypeVar("TEntityId")
 
+
 @dataclasses.dataclass(frozen=True)
 class Event:
-    _subclasses: t.ClassVar[t.Dict[str,t.Type]] = {}
+    _subclasses: t.ClassVar[t.Dict[str, t.Type]] = {}
 
     version: int = 0
-    created_at: dt.datetime = dataclasses.field(default_factory=lambda: dt.datetime.utcnow())
+    created_at: dt.datetime = dataclasses.field(
+        default_factory=lambda: dt.datetime.utcnow()
+    )
 
     def __init_subclass__(cls) -> None:
         """Register subclasses"""
@@ -22,6 +25,7 @@ class Event:
 
     def as_dict(self):
         return dataclasses.asdict(self)
+
 
 @dataclasses.dataclass(frozen=True)
 class EventSequence(t.Generic[TEntityId]):

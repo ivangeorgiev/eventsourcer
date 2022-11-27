@@ -12,4 +12,3 @@ class EventStore(t.Generic[TEntityId], abc.ABC):
     @abc.abstractmethod
     def save(self, events: EventSequence[TEntityId]):
         """Append list of events to event stream"""
-
