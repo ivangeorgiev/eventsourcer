@@ -210,6 +210,8 @@ class TestEventAggregate:
         self, aggregate: ev.EventAggregate
     ):
         event = Mock()
+        assert aggregate._pending_events == []
+
         aggregate.notify(event)
 
         assert list(aggregate.collect_events()) == [event]

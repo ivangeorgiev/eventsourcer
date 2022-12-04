@@ -121,14 +121,7 @@ class EventDecorator:
         raise TypeError(f"Expected str, None or FunctionType, but got {type(arg)}")
 
 
-class EventAggregateMeta(type):
-    def __new__(mcs, name, bases, dct):
-        dct["_pending_events"] = []
-        aggregate = super().__new__(mcs, name, bases, dct)
-        return aggregate
-
-
-class EventAggregate(metaclass=EventAggregateMeta):
+class EventAggregate:
     _pending_events: list
 
     def __init__(self):
