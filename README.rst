@@ -31,7 +31,7 @@ Features
 Example
 --------
 
-.. code-block::
+.. code-block:: python
 
     from eventsourcer.event import (
         EventDecorator,
