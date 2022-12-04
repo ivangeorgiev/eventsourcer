@@ -1,2 +1,0 @@
-# eventsourcer
-Python Event Sourcing

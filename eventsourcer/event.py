@@ -4,7 +4,6 @@ import abc
 import dataclasses
 import inspect
 import typing as t
-import uuid
 from collections.abc import Iterable
 from types import FunctionType
 
@@ -13,15 +12,10 @@ EventHandler = t.Callable
 EventId = str
 
 
-def event_id_factory() -> str:
-    return str(uuid.uuid4())
-
-
 @dataclasses.dataclass(frozen=True)
 class Event:
     name: str
     args: TArgs = dataclasses.field(default_factory=dict)
-    id: EventId = dataclasses.field(default_factory=event_id_factory)
 
 
 class EventListener(abc.ABC):
@@ -30,24 +24,22 @@ class EventListener(abc.ABC):
         """Notify listener about event"""
 
 
-EventNotifier = t.Callable[[EventListener, Event], None]
+EventEmiter = t.Callable[[EventListener, Event], None]
 
 
-def event_notifier(listener: EventListener, event: Event) -> None:
+def notify_listener(listener: EventListener, event: Event) -> None:
     """Invoke `notify` method on event listener."""
     assert isinstance(listener, EventListener) or hasattr(listener, "notify")
     getattr(listener, "notify")(event)
 
 
-class EventBus:
+class EventRegistry:
     """Event handlers registry"""
 
     _handlers: dict[str, EventHandler]
-    _notifier: EventNotifier
 
-    def __init__(self, notifier: EventNotifier | None = None):
+    def __init__(self):
         self._handlers = {}
-        self._notifier = notifier or event_notifier
 
     def register(self, event_name: str, handler: EventHandler):
         registered_handler = self._handlers.get(event_name, None)
@@ -62,12 +54,8 @@ class EventBus:
             return self[event_name]
         return self._handlers.get(event_name, default)
 
-    def handle(self, instance: t.Any, event: Event):
+    def apply(self, instance: t.Any, event: Event):
         self[event.name](instance, **event.args)
-
-    def emit(self, instance: t.Any, event: Event) -> None:
-        self.handle(instance, event)
-        self._notifier(instance, event)
 
     def __getitem__(self, event_name: str) -> EventHandler:
         return self._handlers[event_name]
@@ -77,10 +65,14 @@ class EventBus:
 
 
 class EventDecorator:
-    _bus: EventBus
+    _registry: EventRegistry
+    _emiter: EventEmiter
 
-    def __init__(self, registry: EventBus | None = None):
-        self._bus = registry or EventBus()
+    def __init__(
+        self, registry: EventRegistry | None = None, emiter: EventEmiter | None = None
+    ):
+        self._registry = registry or EventRegistry()
+        self._emiter = emiter or notify_listener
 
     @t.overload
     def __call__(self, arg: FunctionType) -> t.Any:
@@ -101,10 +93,11 @@ class EventDecorator:
                     ba = signature.bind(instance, *args, **kwargs).arguments
                     ba.pop("self")
                     ev = Event(event_name, ba)
-                    return self._bus.emit(instance, ev)
+                    self._registry.apply(instance, ev)
+                    self._emiter(instance, ev)
 
                 event_name = name or f.__name__
-                self._bus.register(event_name, f)
+                self._registry.register(event_name, f)
                 signature = inspect.signature(f)
                 return wrapper
 
@@ -124,12 +117,16 @@ class EventDecorator:
 class EventAggregate(EventListener):
     _pending_events: list
 
-    def __init__(self):
-        self._pending_events = []
+    @property
+    def pending_events(self):
+        if not hasattr(self, "_pending_events"):
+            self._pending_events = []
+        return self._pending_events
 
     def notify(self, event: Event) -> None:
-        self._pending_events.append(event)
+        self.pending_events.append(event)
 
     def collect_events(self) -> Iterable[Event]:
-        while self._pending_events:
-            yield self._pending_events.pop(0)
+        pending_events = self.pending_events
+        while pending_events:
+            yield pending_events.pop(0)
