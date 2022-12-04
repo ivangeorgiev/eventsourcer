@@ -1,15 +1,21 @@
+from __future__ import annotations
+
 import abc
 import dataclasses
 import inspect
 import typing as t
-from types import FunctionType
 import uuid
+from collections.abc import Iterable
+from types import EllipsisType, FunctionType
 
 TArgs = t.Dict[str, t.Any]
 EventHandler = t.Callable
 EventId = str
 
-event_id_factory = lambda : str(uuid.uuid4())
+
+def event_id_factory() -> str:
+    return str(uuid.uuid4())
+
 
 @dataclasses.dataclass(frozen=True)
 class Event:
@@ -39,7 +45,7 @@ class EventBus:
     _handlers: dict[str, EventHandler]
     _notifier: EventNotifier
 
-    def __init__(self, notifier: EventNotifier = None):
+    def __init__(self, notifier: EventNotifier | None = None):
         self._handlers = {}
         self._notifier = notifier or event_notifier
 
@@ -51,7 +57,7 @@ class EventBus:
             raise KeyError("Event name has already been registered")
         self._handlers[event_name] = handler
 
-    def get(self, event_name: str, default: EventHandler = ...):
+    def get(self, event_name: str, default: EventHandler | EllipsisType = ...):
         if default is not ...:
             return self._handlers.get(event_name, default)
         return self[event_name]
@@ -73,23 +79,23 @@ class EventBus:
 class EventDecorator:
     _bus: EventBus
 
-    def __init__(self, registry: EventBus = None):
+    def __init__(self, registry: EventBus | None = None):
         self._bus = registry or EventBus()
 
     @t.overload
-    def __call__(self, func: FunctionType) -> t.Any:
+    def __call__(self, arg: FunctionType) -> t.Any:
         """Register command method as event handler, using it's name as event name"""
 
     @t.overload
-    def __call__(self, func: None = None) -> t.Any:
+    def __call__(self, arg: None = None) -> t.Any:
         """Register command method as event handler, using it's name as event name"""
 
     @t.overload
-    def __call__(self, name: str) -> t.Any:
+    def __call__(self, arg: str) -> t.Any:
         """Register command method as event handler for events with given event name"""
 
-    def __call__(self, arg: t.Union[str, None, FunctionType] = None) -> t.Any:
-        def decorator(f, name: str):
+    def __call__(self, arg: str | None | FunctionType = None) -> t.Any:
+        def decorator(f, name: str | None):
             def decorate(f):
                 def wrapper(instance, *args, **kwargs):
                     ba = signature.bind(instance, *args, **kwargs).arguments
@@ -104,8 +110,7 @@ class EventDecorator:
 
             if f is None:
                 return decorate
-            else:
-                return decorate(f)
+            return decorate(f)
 
         if isinstance(arg, str):
             return decorator(None, arg)
@@ -116,11 +121,10 @@ class EventDecorator:
         raise TypeError(f"Expected str, None or FunctionType, but got {type(arg)}")
 
 
-
 class EventAggregateMeta(type):
-    def __new__(cls, name, bases, dct):
-        dct['_pending_events'] = []
-        aggregate = super().__new__(cls, name, bases, dct)
+    def __new__(mcs, name, bases, dct):
+        dct["_pending_events"] = []
+        aggregate = super().__new__(mcs, name, bases, dct)
         return aggregate
 
 
@@ -128,12 +132,11 @@ class EventAggregate(metaclass=EventAggregateMeta):
     _pending_events: list
 
     def __init__(self):
-        self._pending_events = list()
+        self._pending_events = []
 
     def notify(self, event: Event):
         self._pending_events.append(event)
 
-    def collect_events(self) -> t.Iterable[Event]:
+    def collect_events(self) -> Iterable[Event]:
         while self._pending_events:
             yield self._pending_events.pop(0)
-

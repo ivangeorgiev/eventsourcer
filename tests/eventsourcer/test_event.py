@@ -8,6 +8,7 @@ class Test_event_notifier:
     def test_should_call_listener_notify(self):
         class Listener(ev.EventListener):
             notified: ev.Event = None
+
             def notify(self, event: ev.Event):
                 self.notified = event
 
@@ -21,6 +22,7 @@ class Test_event_notifier:
     def test_should_call_notify_ductyping(self):
         class Listener:
             notified: ev.Event = None
+
             def notify(self, event: ev.Event):
                 self.notified = event
 
@@ -43,7 +45,6 @@ class Test_event_notifier:
 
 
 class TestEventBus:
-
     @pytest.fixture(name="bus")
     def given_bus(self):
         return ev.EventBus()
@@ -78,9 +79,7 @@ class TestEventBus:
         with pytest.raises(KeyError):
             bus.register("my_event", handler2)
 
-    def test_register_should_accept_full_dulicate_registrtion(
-        self, bus: ev.EventBus
-    ):
+    def test_register_should_accept_full_dulicate_registrtion(self, bus: ev.EventBus):
         handler = Mock()
         bus.register("my_event", handler)
 
@@ -88,9 +87,7 @@ class TestEventBus:
 
         assert bus._handlers["my_event"] is handler
 
-    def test_dict_access_should_return_registered_handler(
-        self, bus: ev.EventBus
-    ):
+    def test_dict_access_should_return_registered_handler(self, bus: ev.EventBus):
         handler = Mock()
         bus.register("my_event", handler)
 
@@ -121,20 +118,19 @@ class TestEventBus:
     def test_handle_should_invoke_handler_with_event_args(self, bus: ev.EventBus):
         instance = Mock()
         handler = Mock()
-        event = ev.Event("my_event", {'a': 1})
+        event = ev.Event("my_event", {"a": 1})
         bus.register("my_event", handler)
 
         bus.handle(instance, event)
 
         handler.assert_called_once_with(instance, **event.args)
 
-
     def test_trigger_should_notify(self):
         instance = Mock()
         handler = Mock()
         notifier = Mock()
         bus = ev.EventBus(notifier)
-        event = ev.Event("my_event", {'a': 1})
+        event = ev.Event("my_event", {"a": 1})
         bus.register("my_event", handler)
 
         with patch.object(bus, "handle") as handle_mock:
@@ -193,9 +189,7 @@ class TestEventDecorator:
         assert bus["my_event"] is fake_command
 
 
-
 class TestEventAggregate:
-
     @pytest.fixture(name="aggregate")
     def given_aggregate(self):
         return ev.EventAggregate()
@@ -204,13 +198,17 @@ class TestEventAggregate:
         aggregate = ev.EventAggregate()
         assert isinstance(aggregate._pending_events, list)
 
-    def test_notify_should_append_event_to_pending_events(self, aggregate: ev.EventAggregate):
+    def test_notify_should_append_event_to_pending_events(
+        self, aggregate: ev.EventAggregate
+    ):
         event = Mock()
         aggregate.notify(event)
 
         assert aggregate._pending_events == [event]
 
-    def test_collect_events_should_return_iterable_with_events(self, aggregate: ev.EventAggregate):
+    def test_collect_events_should_return_iterable_with_events(
+        self, aggregate: ev.EventAggregate
+    ):
         event = Mock()
         aggregate.notify(event)
 

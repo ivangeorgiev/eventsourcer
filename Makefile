@@ -57,9 +57,9 @@ lint/isort: ## check interface sort
 lint/black: ## check style with black
 	black --check eventsourcer tests
 lint/mypy: ## check types
-	mypy eventsourcer/persistence
+	mypy eventsourcer
 lint/pylint: ## pylint checks
-	pylint eventsourcer/persistence
+	pylint eventsourcer
 lint: lint/isort lint/black lint/mypy lint/pylint ## check style
 
 test: ## run tests quickly with the default Python
