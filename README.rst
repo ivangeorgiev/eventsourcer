@@ -31,9 +31,12 @@ Features
 Example
 --------
 
-.. code-block::python
+.. code-block::
 
-    from eventsourcer.event import EventDecorator, EventAggregate, EventRegistry
+    from eventsourcer.event import (
+        EventDecorator,
+        EventAggregate,
+        EventRegistry)
 
     registry = EventRegistry()
     emit = EventDecorator(registry)
