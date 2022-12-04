@@ -6,7 +6,7 @@ import inspect
 import typing as t
 import uuid
 from collections.abc import Iterable
-from types import EllipsisType, FunctionType
+from types import FunctionType
 
 TArgs = t.Dict[str, t.Any]
 EventHandler = t.Callable
@@ -26,7 +26,7 @@ class Event:
 
 class EventListener(abc.ABC):
     @abc.abstractmethod
-    def notify(self, event: Event):
+    def notify(self, event: Event) -> None:
         """Notify listener about event"""
 
 
@@ -57,10 +57,10 @@ class EventBus:
             raise KeyError("Event name has already been registered")
         self._handlers[event_name] = handler
 
-    def get(self, event_name: str, default: EventHandler | EllipsisType = ...):
-        if default is not ...:
-            return self._handlers.get(event_name, default)
-        return self[event_name]
+    def get(self, event_name: str, default: EventHandler | None = None):
+        if default is None:
+            return self[event_name]
+        return self._handlers.get(event_name, default)
 
     def handle(self, instance: t.Any, event: Event):
         self[event.name](instance, **event.args)
@@ -121,13 +121,13 @@ class EventDecorator:
         raise TypeError(f"Expected str, None or FunctionType, but got {type(arg)}")
 
 
-class EventAggregate:
+class EventAggregate(EventListener):
     _pending_events: list
 
     def __init__(self):
         self._pending_events = []
 
-    def notify(self, event: Event):
+    def notify(self, event: Event) -> None:
         self._pending_events.append(event)
 
     def collect_events(self) -> Iterable[Event]:
