@@ -65,7 +65,7 @@ class EventBus:
     def handle(self, instance: t.Any, event: Event):
         self[event.name](instance, **event.args)
 
-    def trigger(self, instance: t.Any, event: Event) -> None:
+    def emit(self, instance: t.Any, event: Event) -> None:
         self.handle(instance, event)
         self._notifier(instance, event)
 
@@ -101,7 +101,7 @@ class EventDecorator:
                     ba = signature.bind(instance, *args, **kwargs).arguments
                     ba.pop("self")
                     ev = Event(event_name, ba)
-                    return self._bus.trigger(instance, ev)
+                    return self._bus.emit(instance, ev)
 
                 event_name = name or f.__name__
                 self._bus.register(event_name, f)

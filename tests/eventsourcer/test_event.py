@@ -125,7 +125,7 @@ class TestEventBus:
 
         handler.assert_called_once_with(instance, **event.args)
 
-    def test_trigger_should_notify(self):
+    def test_emit_should_notify(self):
         instance = Mock()
         handler = Mock()
         notifier = Mock()
@@ -134,7 +134,7 @@ class TestEventBus:
         bus.register("my_event", handler)
 
         with patch.object(bus, "handle") as handle_mock:
-            bus.trigger(instance, event)
+            bus.emit(instance, event)
             handle_mock.assert_called_once_with(instance, event)
 
         notifier.assert_called_once_with(instance, event)
